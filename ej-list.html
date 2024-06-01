@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJ List</title>
+    <link href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css" rel="stylesheet">
+    <link href="css/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 32px;
+            height: 32px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .action-link {
+            display: inline-block;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body class="bg-white">
+    <div class="container mx-auto px-4">
+        <header class="flex justify-between items-center py-6">
+            <div class="text-2xl font-bold text-red-600">Hitachi</div>
+            <nav>
+                <a href="index.html" class="text-gray-800 hover:text-red-600">Home</a>
+                <a href="ej-list.html" class="ml-6 text-gray-800 hover:text-red-600">EJ List</a>
+            </nav>
+        </header>
+
+        <div id="copyModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title"
+            role="dialog" aria-modal="true">
+            <div class="flex items-start justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div
+                    class="inline-block align-top bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h2 class="text-xl mb-4">Copy File</h2>
+                        <form id="copyForm" class="space-y-4">
+                            <div>
+                                <label for="source" class="block text-sm font-medium text-gray-700">Source:</label>
+                                <input type="text" id="source" name="source" readonly
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-700 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="destination"
+                                    class="block text-sm font-medium text-gray-700">Destination:</label>
+                                <input type="text" id="destination" name="destination"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div class="flex justify-end space-x-4">
+                                <button type="button" id="cancelButton"
+                                    class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">Cancel</button>
+                                <button type="submit"
+                                    class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">Copy
+                                    Files</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main class="text-center pb-4">
+            <h1 class="text-5xl font-bold text-red-600">Dashboard EJ List</h1>
+            <p class="mt-6 text-xl text-gray-600">Display list of files</p>
+
+            <form id="directoryForm" class="bg-blue-200 p-4 my-4 rounded-lg flex items-center justify-between">
+                <label for="directory" class="text-lg font-bold">Directory:</label>
+                <input type="text" id="directory" name="directory" value="C:\xampp821\htdocs\dashcode\assets\css"
+                    class="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none flex-grow mx-4">
+                <button type="submit" id="reload"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Reload
+                    Data</button>
+            </form>
+
+            <div id="button-container" class="flex justify-start mb-5">
+                <button id="copy"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">Copy</button>
+                <button id="csv"
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2">CSV</button>
+                <button id="pdf" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">PDF</button>
+            </div>
+            <div id="loader" class="der mx-auto"></div>
+            <table id="ejList" class="display">
+                <thead>
+                    <tr>
+                        <th>TID</th>
+                        <th>Filename</th>
+                        <th>EJ Last Update</th>
+                        <th>File Location</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="5" class="text-center">No Data</td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            var data = [];
+            var directory = $('#directory').val();
+            loadData(directory);
+
+            $('#directoryForm').on('submit', function (e) {
+                e.preventDefault();
+                directory = $('#directory').val();
+                console.log("Submitting form with directory: " + directory); // debug
+                $('#reload').prop('disabled', true); // disable button
+                $('#reload').text('Loading...'); // change button text
+                loadData(directory);
+            });
+
+            function loadData(directory) {
+                $.ajax({
+                    url: 'http://localhost:8088/files',
+                    data: { dirname: directory },
+                    beforeSend: function () {
+                        $('#loader').show();
+                    },
+                    complete: function () {
+                        $('#loader').hide();
+                        $('#reload').prop('disabled', false); // enable button
+                        $('#reload').text('Reload Data'); // reset button text
+                    },
+                    success: function (response) {
+                        data = response;
+                        console.log(data);
+                        var tbody = $("#tableBody");
+                        tbody.empty();
+                        if ($.fn.DataTable.isDataTable('#ejList')) {
+                            $('#ejList').DataTable().clear().destroy(); // clear and destroy previous DataTable instance
+                        }
+                        for (var i = 0; i < data.length; i++) {
+                            var encodedPath = encodeURIComponent(data[i].path);
+                            var row = "<tr><td>" + data[i].tid + "</td><td>" + data[i].filename + "</td><td>" + data[i].last_modified + "</td><td>" + data[i].path + "</td><td>";
+                            if (data[i].tid === 0) {
+                                row += "<button class='action-link bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded mr-2' onclick='navigateUp(\"" + encodedPath + "\")'>Navigate Up One Folder</button>";
+                            } else if (data[i].is_directory) {
+                                row += "<button class='action-link bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded mr-2' onclick='accessFolder(\"" + encodedPath + "\")'>Access Folder</button>";
+                            } else {
+                                row += "<button class='action-link bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mr-2' onclick='copyPasteFile(\"" + encodedPath + "\")'>Download today EJ</button><button class='action-link bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded' onclick='viewFile(\"" + encodedPath + "\")'>View/Text Editor</button>";
+                            }
+                            row += "</td></tr>";
+                            tbody.append(row);
+                        }
+                        $('#ejList').DataTable({
+                            responsive: true
+                        });
+                    }
+                });
+            }
+
+            $('#copy').click(function () {
+                var text = '';
+                for (var i = 0; i < data.length; i++) {
+                    text += data[i].tid + "\t" + data[i].filename + "\t" + data[i].path + "\t" + data[i].size + "\t" + data[i].last_modified + "\n";
+                }
+                navigator.clipboard.writeText(text);
+            });
+
+            $('#csv').click(function () {
+                var text = 'TID,Filename,Path,Size,Last Modified\n';
+                for (var i = 0; i < data.length; i++) {
+                    text += data[i].tid + "," + data[i].filename + "," + data[i].path + "," + data[i].size + "," + data[i].last_modified + "\n";
+                }
+                var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+                saveAs(blob, "data.csv");
+            });
+
+            $('#pdf').click(function () {
+                var doc = new jsPDF();
+                doc.text('TID\tFilename\tPath\tSize\tLast Modified', 10, 10);
+                for (var i = 0; i < data.length; i++) {
+                    doc.text(data[i].tid + "\t" + data[i].filename + "\t" + data[i].path + "\t" + data[i].size + "\t" + data[i].last_modified, 10, 20 + (i * 10));
+                }
+                doc.save('data.pdf');
+            });
+        });
+
+        function copyPasteFile(path) {
+            console.log('copyPasteFile function is called');
+            // Isi form input sumber dengan path file
+            $('#source').val(decodeURIComponent(path));
+            // Tampilkan modal
+            $('#copyModal').removeClass('hidden');
+        }
+
+        $('#cancelButton').click(function () {
+            $('#copyModal').addClass('hidden');
+        });
+
+        $('#copyForm').on('submit', function (e) {
+            e.preventDefault();
+            // Ambil nilai dari form input sumber dan tujuan
+            var src = $('#source').val();
+            var dst = $('#destination').val();
+
+            console.log('Copying file from ' + src + ' to ' + dst);
+            // Kirim permintaan POST ke endpoint API Anda
+            $.ajax({
+                type: 'POST',
+                url: 'http://localhost:8088/copy',
+                data: JSON.stringify({ src: src, dst: dst }),
+                contentType: 'application/json',
+                success: function (response) {
+                    // Tutup modal dan beri tahu pengguna bahwa file telah berhasil disalin
+                    $('#copyModal').addClass('hidden');
+                    alert('File has been copied successfully!');
+                    // reload data
+                    $('#directoryForm').submit();
+                    
+                },
+                error: function (error) {
+                    // Beri tahu pengguna jika ada kesalahan
+                    alert('An error occurred while copying the file.');
+                }
+            });
+        });
+
+
+        function viewFile(path) {
+            // Decode the URL encoded path
+            var decodedPath = decodeURIComponent(path);
+            console.log("View: " + decodedPath);
+            var newPath = decodedPath.replace(/\\/g, '\\\\');
+            console.log("View: " + newPath);
+            $.ajax({
+                type: 'POST',
+                url: 'http://localhost:8088/read',
+                data: JSON.stringify({ src: newPath }),
+                contentType: 'application/json',
+                success: function (response) {
+                    // Open the response in a new tab
+                    var win = window.open();
+                    win.document.write('<pre>' + response + '</pre>');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function accessFolder(path) {
+            $('#directory').val(decodeURIComponent(path));
+            $('#directoryForm').submit();
+        }
+
+        function navigateUp(path) {
+            var newPath = decodeURIComponent(path).split('\\');
+            newPath.pop();
+            $('#directory').val(newPath.join('\\'));
+            $('#directoryForm').submit();
+        }
+    </script>
+</body>
+
+</html>
